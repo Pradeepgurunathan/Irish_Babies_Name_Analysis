@@ -1,0 +1,554 @@
+---
+title: "Statistical Report on Irish Baby Names From 1964 to 2018"
+author: "Pradeep Gurunathan"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  rmdformats::readthedown:
+    fig_width: 8 
+    fig_height: 4 
+    fig_caption: TRUE
+    self_contained: true
+    thumbnails: false
+    lightbox: false
+    gallery: false
+    highlight: tango
+    use_bookdown: false
+runtime: html_document    
+
+
+---
+
+## Introduction {.tabset .tabset-fade}
+  This Statistical report provides a clear overview over the Irish babies names from 1964 to 2018. The various aspects of data such as most popular names for boys and girls throughout 55 years and their popularity trends are emphasized in this analysis. 
+  
+  It also includes the Top 10 names across both the genders and also try to estimate the difference in proportions of birth rate of boys and girls.
+
+```{r,echo=FALSE,warning=FALSE,message=FALSE}
+## "Below package are used to generate this 'Statistical Report on Irish Baby Names From 1964 to 2018' "
+
+#install.packages("plyr")
+#install.packages("dplyr")
+#install.packages("tidyverse")
+#install.packages("readr")
+#install.packages("plotly")
+#install.packages("ggplot2")
+#install.packages("rebus")
+#install.packages("gridExtra")
+#install.packages("grid")
+#install.packages("rmdformats")
+suppressWarnings(library(plyr))
+suppressWarnings(library(dplyr))
+suppressMessages(library(tidyverse))
+suppressWarnings(library(readr))
+suppressWarnings(library(plotly))
+suppressWarnings(library(ggplot2))
+suppressMessages(library(rebus))
+suppressMessages(library(gridExtra))
+suppressMessages(library(grid))
+suppressMessages(library(shiny))
+suppressMessages(library(rmdformats))
+
+```
+
+## Data importing and cleanzing {.tabset .tabset-fade}
+
+#### Data importing and cleanzing 
+
+Below code are used to read the individual zip folder which contains separate CSV documents of all Irish Girl and Boy babies details from 1964 to 2018 and storing it in separate dataset's. Secondly, new column fields are created like 'sex' and 'year' in each Girl and Boy dataset's for better understanding of the dataset and for further statistical analysis. Finally, both Boy dataset and Girl dataset are combined row wise to form a new dataset and then sex field is converted as factor.
+
+```{r,echo=FALSE} 
+
+files<-list.files("R-mini-project_Girl",pattern = "*.csv",full.names = T) # Reading the zipfile which contains all individual CSV documents of all Irish Girl babies details from 1964 to 2018
+dataset1<- suppressMessages(ldply(files,read_csv)) # Reading individual CSV documents of Irish Girl babies details from 1964 to 2018 and storing it in 'dataset1'
+count<-ldply(files,function(x) nrow(read.csv(x))) # Counting the number of rows in each CSV document and storing in 'count'
+year<-as.integer(substring(files,37,40)) # Using substring we are extracting year from each CSV documents name and storing in 'year'
+count1<-sapply(count,as.numeric)
+dataset1$sex<-'girl' # Creating a new column called 'sex' and storing 'girl' data in it
+dataset1$year<-rep(year,count1) # Using 'count1' and 'year' field we are storing year data in the new column called 'year' in 'dataset1'
+names(dataset1)[names(dataset1) == "Number of Births"] <- "births" # renaming the column name from "Number of Births" to "births"
+
+files2<-list.files("R-mini-project_Boy",pattern = "*.csv",full.names = T)# Reading the zipfile which contains all individual csv documents of all Irish Boy babies details from 1964 to 2018
+dataset2<-suppressMessages(ldply(files2,read_csv)) # Reading individual CSV documents of Irish Boy babies details from 1964 to 2018 and storing it in 'dataset2'
+count2<-ldply(files2,function(x) nrow(read.csv(x))) # Counting the number of rows in each CSV document and storing in 'count2'
+year1<-as.integer(substring(files2,35,38)) # Using substring we are extracting year from each CSV documents name and storing in 'year1'
+count3<-sapply(count2,as.numeric)
+dataset2$sex<-'boy' # Creating a new column called 'sex' and storing 'boy' data in it
+dataset2$year<-rep(year1,count3) # Using 'count3' and 'year1' field we are storing year data in the new column called 'year' in 'dataset2'
+names(dataset2)[names(dataset2) == "Number of Births"] <- "births" # renaming the column name from "Number of Births" to "births"
+
+dataset<-rbind(dataset1,dataset2) # combining 'dataset1' and 'dataset2' by row wise to new dataset called 'dataset'
+dataset$sex<-as.factor(dataset$sex) # we are converting 'sex' field data to factor
+
+names(dataset)[names(dataset) == "Number of Births"] <- "births" # renaming the column name from "Number of Births" to "births"
+
+
+```
+
+#### Data preview {.tabset .tabset-fade}
+
+
+```{r,echo=FALSE,message=FALSE}
+head(dataset,25)
+```
+
+#### Packages used {.tabset .tabset-fade}
+
+The analysis and visualization are done using R and we have used below packages from R library.
+
+Packages used:
+
+1. tidyverse - Used to reading and manipulation. 
+
+2. shiny - Used to plot interactive charts 
+
+3. rebus - Used in string operations.
+
+4. grid / gridextra - Used for displaying charts in a grid format.
+
+5. Dplyr: Used for data manipulation.
+
+6. rmdformats - Used for report generation.
+
+7. readr - Used to read the Zip folder.
+
+8. plotly - Used to plot interactive charts.
+
+9. ggplot2 - Used to plot charts.
+
+
+## Observations {.tabset .tabset-fade}
+#### Observation 1
+
+Line graph to show the total irish babies born from 1964 to 2018.
+  
+  From the line graph it is observed that there is a steady increase in total births from late 1960's till 1980, then there is steep fall from 1980 till late 1990's.Later, in 1998 total births was least when compared to other years from 1964 to 2018.
+```{r,echo=FALSE,message=FALSE}
+# new 'Birthdetails_total' dataset is created by storing only the data from 'dataset' which are grouped by 'year' field and sum of 'births' for each year combining both Girl and Boy birth's are stored in 'total' field.  
+Birthdetails_total<-dataset%>% select(year,sex,births) %>% group_by(year)%>%summarise(total=sum(births)) 
+
+# line graph to show the total irish babies born from 1964 to 2018.
+ggplot(data = Birthdetails_total,mapping = aes(x = year, y =total)) +
+geom_line(colour='#800080') 
+
+# display the year and total birth which has highest number of birth's.
+print('Highest number of births from 1964 to 2018?')
+max_total<-max(Birthdetails_total$total)
+max_details<- Birthdetails_total %>% select(year,total) %>% filter(Birthdetails_total$total==max_total)
+names(max_details)[names(max_details) == "total"] <- 'Total Births'
+max_details 
+
+# display the year and total birth which has least number of birth's.
+print('Lowest number of births from 1964 to 2018?')
+min_total<-min(Birthdetails_total$total)
+min_details<- Birthdetails_total %>% select(year,total) %>% filter(Birthdetails_total$total==min_total)
+names(min_details)[names(min_details) == "total"] <- 'Total Births'
+min_details 
+print('Average number of births from 1964 to 2018?')
+
+# display average birth's for over the period from 1964 to 2018.
+mean_total<-mean(Birthdetails_total$total)
+mean_total 
+
+
+
+
+```
+
+#### Observation 2
+
+Below graph represents total individual Irish Boy-Girl babies birth from 1964 to 2018.
+```{r,echo=FALSE,message=FALSE}
+## new 'BirthDetails' dataset is created by storing only the data from 'dataset' which are grouped by 'year' and 'sex' field and sum of 'births' for each sex in that year are stored in 'totalsex' field.
+BirthDetails<-dataset%>% group_by(year,sex)%>%summarise(totalsex=sum(births)) 
+
+# Graph to show the differnece in boy and girl babies born from 1964 to 2018.
+ggplot(data = BirthDetails ) +
+geom_point(mapping = aes(x = year , y = totalsex , color =sex))+scale_color_manual(labels = c("boy", "girl"), values = c("#27a2ba", "#fa5a95"))+xlab("Years") + ylab("Total Birth counts")+ggtitle(label="Boy VS Girl Birth Ratio") 
+
+#To create a dataset 'diffbirth' to store difference between Boy-Girl births for each of the year's from 1964 to 2018.
+diffbirth<-BirthDetails%>% group_by(year)%>%summarise(dsex=diff(-totalsex))
+
+# display the year and differnece in birth which has highest difference in boy-girl births.
+print('Highest Boy-Girl birth difference from 1964 to 2018?')
+max_diff<-max(diffbirth$dsex)
+max_diffdetails<- diffbirth %>% select(year,dsex) %>% filter(diffbirth$dsex==max_diff)
+names(max_diffdetails)[names(max_diffdetails) == "dsex"] <- 'Difference Between Boy-Girl Birth'
+max_diffdetails
+
+# display the year and differnece in birth which has least difference in boy-girl births.
+print('Lowest Boy-Girl birth difference from 1964 to 2018?')
+min_diff<-min(diffbirth$dsex)
+min_diffdetails<- diffbirth %>% select(year,dsex) %>% filter(diffbirth$dsex==min_diff)
+names(min_diffdetails)[names(min_diffdetails) == "dsex"] <- 'Difference Between Boy-Girl Birth'
+min_diffdetails
+
+# display average difference in Boy-Girl births for over the period from 1964 to 2018.
+print('Average Boy-Girl birth difference from 1964 to 2018?')
+mean_diff<-mean(diffbirth$dsex)
+round(mean_diff)
+
+
+```
+
+#### Observation 3
+
+Top 10 Boy and Girl baby name's from 1964 to 2018.
+
+It is observed that the name 'Mary' is the most popular Irish Girl baby name that was kept over the years from 1964 to 2018.
+
+More than 70000 Irish Boy babies where named as 'John' from 1964 to 2018. It has been the most desired name over the years.
+
+```{r,echo=FALSE,message=FALSE,fig.height=3, fig.width=8}
+# New dataset is created as 'GirlDetails' to store the grouped data based on name from dataset 'dataset1' which contains only the girl baby data and also storing the sum of total births for each girl names from 1964 to 2018.
+
+GirlDetails<-dataset1%>% group_by(Name)%>%summarise(total=sum(births)) %>% arrange(-total) 
+
+# To show the Top 10 Girl babies name from 1964 to 2018.
+girl1<-ggplot(GirlDetails[1:10,], aes(x=reorder(Name,-total),y=total,fill=Name)) +
+geom_col()+coord_flip()+theme_minimal() + theme(legend.position="none")  + scale_fill_hue(l=40, c=35) + scale_fill_manual(values=c("#fa5a95","#fa5a95","#fa5a95","#fa5a95","#fa5a95","#fa5a95","#fa5a95","#fa5a95","#fa5a95","#fa5a95"))+xlab("Top 10 Girls Names") + ylab("Top 10 Girls Names count") 
+
+# New dataset is created as 'BoyDetails' to store the grouped data based on name from dataset 'dataset2' which contains only the boy baby data and also storing the sum of total births for each boy names from 1964 to 2018.
+BoyDetails<-dataset2%>% group_by(Name)%>%summarise(total=sum(births))%>% arrange(-total) 
+
+# To show the Top 10 Boy babies name from 1964 to 2018.
+boy1<- ggplot(BoyDetails[1:10,], aes(x=reorder(Name,-total),y=total,fill=Name)) +
+geom_col()+coord_flip()+theme_minimal() + theme(legend.position="none")  + scale_fill_hue(l=40, c=35) + scale_fill_manual(values=c("#27a2ba","#27a2ba","#27a2ba","#27a2ba","#27a2ba","#27a2ba","#27a2ba","#27a2ba","#27a2ba","#27a2ba"))+xlab("Top 10 Boys Names") + ylab("Top 10 Boys Names count")
+grid.arrange(girl1,boy1,nrow=1,ncol=2,top="Top 10 Boy and Girl baby name's from 1964 to 2018")
+```
+
+#### Observation 4
+
+Comparing the both graph of Irish Boy-Girl name length we infer that there is not much difference in Boy-Girl name lengths, both are having an average of 5 or 6 as their name lengths. Also, maximum and minimum name lengths for both the Boy-Girl name are 2 and 14 respectively.
+
+```{r,echo=FALSE,message=FALSE,fig.height=3, fig.width=8}
+# Creating new dataset 'gname_len' to store the length of the girls name.
+gname_len<-data.frame(dataset1,length=str_length(dataset1$Name))
+
+# Creating new dataset 'gname_len' to store the length of the boys name.
+bname_len<-data.frame(dataset2,length=str_length(dataset2$Name))
+
+# Display the bar graph to display the various length of girls name.
+g1<-ggplot(bname_len,aes(length))+geom_bar(fill="#27a2ba")+labs(x="Name Length-Boys")
+
+# Display the bar graph to display the various length of boys name.
+g2<-ggplot(gname_len,aes(length))+geom_bar(fill="#fa5a95")+labs(x="Name Length-Girls")
+# Combining both the bar graph of Boy-Girl length of names.
+grid.arrange(g1,g2,nrow=1,ncol=2,top="Length of Boy's and Girl's Names")
+
+# To display the details of Irish girl baby which has maximum name length
+print("Maximum name length of the Irish Girl Baby name from 1964 to 2018?")
+max_gname<-max(gname_len$length)
+max_gnamedetails<- gname_len %>% select(Name,length,year) %>% filter(gname_len$length==max_gname)
+
+max_gnamedetails
+
+# To display the details of Irish Boy baby which has maximum name length
+print("Maximum name length of the Irish Boy Baby names from 1964 to 2018?")
+max_bname<-max(bname_len$length)
+max_bnamedetails<- bname_len %>% select(Name,length,year) %>% filter(bname_len$length==max_bname)
+
+max_bnamedetails
+
+```
+
+#### Observation 5
+
+The most frequent Starting letters for the Irish Boy-Girl Baby Names is A, C, D, J, M and A, C, E, L, M respectively. Whereas, the rare occurance Starting letters for both sex is from U to Z.
+
+```{r,echo=FALSE,message=FALSE}
+#To Store the Starting Boy Name letter's
+boy_sletter<-str_sub(dataset2$Name,1,1)
+bl<-as.data.frame(table(boy_sletter))
+
+#To Visualize the Starting alphabet of boy's name using ggplot funtion.
+g3<-ggplot(bl,aes(boy_sletter,Freq))+geom_bar(stat="identity",fill="#27a2ba")+labs(x="Starting Letter - Boys",y="Count")
+
+#To Store the Starting Girl's Name letter's
+girl_sletter<-str_sub(dataset1$Name,1,1)
+gl<-as.data.frame(table(girl_sletter))
+
+#To Visualize the Starting alphabet of Girl's name using ggplot funtion.
+g4<-ggplot(gl,aes(girl_sletter,Freq))+geom_bar(stat="identity",fill="#fa5a95")+labs(x="Starting Letter- Girls",y="count")
+
+#Combing both Starting letter Graphs for each gender in a  2:1 grid.
+grid.arrange(g3,g4,ncol=1,nrow=2,top="Starting Letter of the names ")
+```
+
+#### Observation 6
+From the Vowel's graph, it can be concluded that average vowels count is more in Girl's compared to Boy's names.
+
+```{r,echo=FALSE,message=FALSE,fig.height=2, fig.width=3}
+#Stores the Length of each name of boy 
+blength<-str_length(dataset2$Name)
+#Stores the Length of each name of Girl
+glength<-str_length(dataset1$Name)
+
+#Assigning  vowels to  the variable 
+vowels<-char_class("aeiouAEIOU")
+
+#Determining the vowel count in each boy name 
+vowel_gcnt<-str_count(dataset1$Name,one_or_more(vowels))
+
+#Determining the vowel count in each girl name 
+vowel_bcnt<-str_count(dataset2$Name,one_or_more(vowels))
+
+#Average mean vowel count in each boy and girl
+avg_vowel_boys<-mean(vowel_bcnt)
+avg_vowel_girls<-mean(vowel_gcnt)
+
+#Data frame to store the average vowels for Boy and Girls name 
+name_vowel<-data.frame(Gender=c("Boys","Girls"),Avg_Vowels=c(avg_vowel_boys,avg_vowel_girls))
+
+# To display the average vowels for Boy-Girl names using ggplot
+ggplot(name_vowel,aes(x=Gender,y=Avg_Vowels,fill=Gender))+geom_bar(stat="identity")+scale_fill_manual(values=c("#27a2ba","#fa5a95"))
+
+
+```
+
+#### Observation 7
+
+Calculating  the highest and lowest popularity of Irish Baby names from 1964 to 2018.
+
+```{r,echo=FALSE,message=FALSE,warning=FALSE}
+# To display the highest and lowest popularity of Irish Girl Baby names from 1964 to 2018
+# Subset data from 1964, summarize frequencies and calculate percentage name poularity for 1964 and then sort in "uu" data frame
+df = subset(dataset1, year==1964)
+df$Name = as.character(df$Name)
+uu= data.frame(summarize(group_by(df,Name), sum(births)))
+total = sum(uu$sum.births.)
+uu$Perc = uu$sum.births./total*100
+uu = arrange(uu,-Perc)
+
+# Subset data from 2018, summarize frequencies and calculate percentage name poularity for 2018 and then sort in "uu2" data frame
+df = subset(dataset1, year==2018)
+df$Name = as.character(df$Name)
+uu2= data.frame(summarize(group_by(df,Name), sum(births)))
+total = sum(uu2$sum.births.)
+uu2$Perc = uu2$sum.births./total*100
+uu2 = arrange(uu2,-Perc)
+
+# Making sure to compare names which existed in 1964 and still exist in 2018 and sort
+kk = subset(uu2, Name %in% uu$Name)
+kk = arrange(kk, Name)
+
+# Reverse correlate those back to 1964 so that we have same sets of names aka Inner Join and sort again
+cc = subset(uu, Name %in% kk$Name)
+cc = arrange(cc, Name)
+
+# Calculate percentage difference as 2018 minus 1964
+kk$Diff = kk$Perc -cc$Perc
+
+#The highest percentage increase in popularity since 1964 to 2018:
+print("Highest percentage increase in popularity since 1964 to 2018 for Irish Girl names")
+kk = arrange(kk, -Diff)
+kk[1,c(1,4)]
+
+#The highest percentage decrease in popularity since 1964 to 2018:
+print("Highest percentage decrease in popularity since 1964 to 2018 for Irish Girl names")
+kk = arrange(kk, Diff)
+kk[1,c(1,4)]
+
+# To display the highest and lowest popularity of Irish Boy Baby names from 1964 to 2018
+# Subset data from 1964, summarize frequencies and calculate percentage name poularity for 1964 and then sort in "uu" data frame
+df = subset(dataset2, year==1964)
+df$Name = as.character(df$Name)
+uu= data.frame(summarize(group_by(df,Name), sum(births)))
+total = sum(uu$sum.births.)
+uu$Perc = uu$sum.births./total*100
+uu = arrange(uu,-Perc)
+
+# Subset data from 2018, summarize frequencies and calculate percentage name poularity for 2018 and then sort in "uu2" data frame
+df = subset(dataset2, year==2018)
+df$Name = as.character(df$Name)
+uu2= data.frame(summarize(group_by(df,Name), sum(births)))
+total = sum(uu2$sum.births.)
+uu2$Perc = uu2$sum.births./total*100
+uu2 = arrange(uu2,-Perc)
+
+# Making sure to compare names which existed in 1964 and still exist in 2018 and sort
+kk = subset(uu2, Name %in% uu$Name)
+kk = arrange(kk, Name)
+
+# Reverse correlate those back to 1964 so that we have same sets of names aka Inner Join and sort again
+cc = subset(uu, Name %in% kk$Name)
+cc = arrange(cc, Name)
+
+# Calculate percentage difference as 2018 minus 1964
+kk$Diff = kk$Perc -cc$Perc
+
+#The highest percentage increase in popularity since 1964 to 2018:
+print("Highest percentage increase in popularity since 1964 to 2018 for Irish Boy names")
+kk = arrange(kk, -Diff)
+kk[1,c(1,4)]
+
+#The highest percentage decrease in popularity since 1964 to 2018:
+print("Highest percentage decrease in popularity since 1964 to 2018 for Irish Boy names")
+kk = arrange(kk, Diff)
+kk[1,c(1,4)]
+```
+
+#### Observation 8
+
+Displaying the years that has unique name's from 1964 to 2018. It can be observed that the year 2003 and 2018 has the highest unique name count.
+
+```{r,echo=FALSE,message=FALSE,warning=FALSE,fig.height=3, fig.width=8}
+
+#Function  GendAmb  to calculate unique names in each year
+
+GendAmb = function (arg_df) {
+ 
+df=arg_df  
+df$Name = as.character(df$Name)
+df = df[,c(1,3:5)]
+dd=data.frame(summarize(group_by(df,Name,sex), sum(births)))
+uu=data.frame(summarize(group_by(df,Name), sum(births)))
+
+dd =dd[!duplicated(dd["Name"]),]
+
+uu$Ratio = abs((2*dd$sum.births./uu$sum.births.)-1)
+uu = arrange(uu,Ratio)
+return(subset(uu, Ratio==0))
+}
+
+
+#Storing each year unique names
+c1<-GendAmb(subset(dataset, year==1964))
+c2<-GendAmb(subset(dataset, year==1965))
+c3<-GendAmb(subset(dataset, year==1966))
+c4<-GendAmb(subset(dataset, year==1967))
+c5<-GendAmb(subset(dataset, year==1968))
+c6<-GendAmb(subset(dataset, year==1969))
+c7<-GendAmb(subset(dataset, year==1970))
+c8<-GendAmb(subset(dataset, year==1971))
+c9<-GendAmb(subset(dataset, year==1972))
+c10<-GendAmb(subset(dataset, year==1973))
+c11<-GendAmb(subset(dataset, year==1974))
+c12<-GendAmb(subset(dataset, year==1975))
+c13<-GendAmb(subset(dataset, year==1976))
+c14<-GendAmb(subset(dataset, year==1977))
+c15<-GendAmb(subset(dataset, year==1978))
+c16<-GendAmb(subset(dataset, year==1979))
+c17<-GendAmb(subset(dataset, year==1980))
+c18<-GendAmb(subset(dataset, year==1981))
+c19<-GendAmb(subset(dataset, year==1982))
+c20<-GendAmb(subset(dataset, year==1983))
+c21<-GendAmb(subset(dataset, year==1984))
+c22<-GendAmb(subset(dataset, year==1985))
+c23<-GendAmb(subset(dataset, year==1986))
+c24<-GendAmb(subset(dataset, year==1987))
+c25<-GendAmb(subset(dataset, year==1988))
+c26<-GendAmb(subset(dataset, year==1989))
+c27<-GendAmb(subset(dataset, year==1990))
+c28<-GendAmb(subset(dataset, year==1991))
+c29<-GendAmb(subset(dataset, year==1992))
+c30<-GendAmb(subset(dataset, year==1993))
+c31<-GendAmb(subset(dataset, year==1994))
+c32<-GendAmb(subset(dataset, year==1995))
+c33<-GendAmb(subset(dataset, year==1996))
+c34<-GendAmb(subset(dataset, year==1997))
+c35<-GendAmb(subset(dataset, year==1998))
+c36<-GendAmb(subset(dataset, year==1999))
+c37<-GendAmb(subset(dataset, year==2000))
+c38<-GendAmb(subset(dataset, year==2001))
+c39<-GendAmb(subset(dataset, year==2002))
+c40<-GendAmb(subset(dataset, year==2003))
+c41<-GendAmb(subset(dataset, year==2004))
+c42<-GendAmb(subset(dataset, year==2005))
+c43<-GendAmb(subset(dataset, year==2006))
+c44<-GendAmb(subset(dataset, year==2007))
+c45<-GendAmb(subset(dataset, year==2008))
+c46<-GendAmb(subset(dataset, year==2009))
+c47<-GendAmb(subset(dataset, year==2010))
+c48<-GendAmb(subset(dataset, year==2011))
+c49<-GendAmb(subset(dataset, year==2012))
+c50<-GendAmb(subset(dataset, year==2013))
+c51<-GendAmb(subset(dataset, year==2014))
+c52<-GendAmb(subset(dataset, year==2015))
+c53<-GendAmb(subset(dataset, year==2016))
+c54<-GendAmb(subset(dataset, year==2017))
+c55<-GendAmb(subset(dataset, year==2018))
+
+
+#Assigning each year value to the corresponding unique name dataset
+c3$year<-'1966'
+c10$year<-'1973'
+c14$year<-'1977'
+c16$year<-'1979'
+c17$year<-'1980'
+c18$year<-'1981'
+c22$year<-'1985'
+c24$year<-'1987'
+c25$year<-'1988'
+c28$year<-'1991'
+c29$year<-'1992'
+c30$year<-'1993'
+c31$year<-'1994'
+c38$year<-'2001'
+c39$year<-'2002'
+c40$year<-'2003'
+c41$year<-'2004'
+c42$year<-'2005'
+c44$year<-'2007'
+c45$year<-'2008'
+c46$year<-'2009'
+c47$year<-'2010'
+c48$year<-'2011'
+c49$year<-'2012'
+c51$year<-'2014'
+c52$year<-'2015'
+c53$year<-'2016'
+c54$year<-'2017'
+c55$year<-'2018'
+
+#Combining all year's unique names to one dataset
+ratios <- rbind(c3,c10,c14,c16,c17,c18,c22,c24,c25,c28,c29,c30,c31,c38,c39,c40,c41,c42,c44,c45,c46,c47,c48,c49,c51,c52,c53,c54,c55)
+
+#Renaming the ratio dataset column name
+names(ratios)[names(ratios) == "sum.births."] <- "total"
+
+
+# Visualization of years vs unique name count using Plot_ly.
+plot_ly(data = ratios, x = ~year, fill=~total,marker = list(color = "rgba(121, 5, 171, 0.6)",
+                            line = list(color = "rgb(20, 20, 20)",
+                                        width = 2)))
+
+
+```
+
+
+
+
+## Conclusion {.tabset .tabset-fade}
+
+The above evaluation helped us understand the Irish baby names dataset better. Now we have answers to some compelling questions and are in a position to do follow-up and deep dive analysis. The following is the conclusions of the observations:
+
+  *	It is observed that there is a steady increase in total births from late 1960’s till 1980, then there is steep fall from 1980 till late 1990’s. Later, in 1998 total births was least when compared to other years from 1964 to 2018. As seen in the line graph.
+
+  *	It can be inferred that in 1980 there was a highest number of Baby births around 72498 and in 1998 there was a lowest birth rate of 39875. 
+
+  *	In 2014, difference in the Boy-Girl birth rate was highest of 3149. Least birth rate difference was 1135 in the year 2018.
+
+  *	More than 40000 girls where named after ‘Mary’ and around 70000 boys where named after ‘John’ over the 55 years from 1964 to 2018.
+
+  *	There is not much difference in Boy-Girl name lengths, both are having an average of 5 or 6 as their name lengths. Also, maximum and minimum name lengths for both the Boy-Girl name are 2 and 14 respectively.
+
+  *	A, C, D, J, M and A, C, E, L, M are the most frequent Starting letters for the Irish Boy-Girl Baby Names respectively.
+
+  *	Girl name ‘Emily’ saw 1.63% increase in its popularity over the years from 1964 to 2018. Whereas, there was a 11.21% decrease in its popularity for Girl name ‘Mary’.
+
+  *	‘Conor’ name saw 1.42% increase in its popularity over the years from 1964 to 2018 for Boys. 10.69%  for boy name ‘John’ saw decrease in its popularity over the years from 1964 to 2018.
+
+  *	In year 2003 and 2018 has the highest unique name count of 6.
+
+
+## About Me {.tabset .tabset-fade}
+
+
+```{r,echo=FALSE,message=FALSE,fig.height=5, fig.width=1}
+p("Name:- Pradeep Gurunathan")
+p("Email ID- pradeepguru6464@gmail.com")
+url <- a("Linkedin profile", href="https://www.linkedin.com/in/pradeep-gurunathan")
+tagList("Linkedin:", url)
+p("Phone Number- +353-894877760")
+
+```
